@@ -1,0 +1,11 @@
+[package]
+name = "avi2mp4"
+version = "0.1.0"
+edition = "2021"
+description = "Convert AVI files to MP4 (remux when possible, re-encode otherwise) using ffmpeg"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+strip = true
