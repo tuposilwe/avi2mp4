@@ -1,6 +1,7 @@
 # avi2mp4
 
-A small command-line tool, written in Rust, that converts video and audio files between formats.
+A small tool, written in Rust, that converts video and audio files between formats.
+Double-click it for a simple window, or use it from the command line.
 By default it turns `.avi` files into `.mp4`, but it can also:
 
 - convert any common video to **MP4, MKV, WebM, MOV or AVI**
@@ -13,7 +14,7 @@ It always picks the fastest conversion that works. If a stream is already in a c
 supports, it is **copied** unchanged (lossless, takes seconds). Otherwise it is **re-encoded**.
 
 The actual encoding is done by [ffmpeg](https://ffmpeg.org). avi2mp4 decides which settings to use, runs ffmpeg,
-shows progress and handles batches of files. It has no Rust dependencies beyond the standard library.
+shows progress and handles batches of files.
 
 ---
 
@@ -21,7 +22,7 @@ shows progress and handles batches of files. It has no Rust dependencies beyond 
 
 1. [Setup (one time)](#1-setup-one-time)
 2. [Build the tool](#2-build-the-tool)
-3. [Quick start](#3-quick-start)
+3. [Quick start](#3-quick-start) (window and command line)
 4. [Supported formats](#4-supported-formats)
 5. [Conversion recipes](#5-conversion-recipes)
 6. [All options](#6-all-options)
@@ -76,7 +77,19 @@ cargo --version
 ```
 
 > If you already have Visual Studio with the "Desktop development with C++" workload, the standard installer
-> from <https://rustup.rs> (MSVC toolchain) works too.
+> from <https://rustup.rs> (MSVC toolchain) works too, and you can skip 1.3.
+
+### 1.3 Install MinGW (GNU toolchain only)
+
+The window uses crates that need `dlltool` and an assembler at build time. The GNU Rust toolchain doesn't ship
+working copies, so install MinGW once (about 100 MB) with [scoop](https://scoop.sh):
+
+```powershell
+scoop install mingw
+```
+
+**Close and reopen PowerShell**, then check it: `dlltool --version`. Without it the build fails with
+`error calling dlltool 'dlltool.exe': program not found`.
 
 ---
 
@@ -87,7 +100,7 @@ cd C:\Users\MasterMind47\Videos\avi2mp4
 cargo build --release
 ```
 
-The first build takes a minute or two. The program ends up at:
+The first build takes a few minutes (the window library has many dependencies). The program ends up at:
 
 ```
 C:\Users\MasterMind47\Videos\avi2mp4\target\release\avi2mp4.exe
@@ -107,6 +120,20 @@ The examples below assume you did this. If you didn't, replace `avi2mp4` with th
 ---
 
 ## 3. Quick start
+
+### The window
+
+Double-click `avi2mp4.exe` (or run `avi2mp4` with no arguments):
+
+1. Drag files or folders into the window, or click it to choose files.
+2. Pick the format under **Convert to** (MP4 by default).
+3. Optional: under **Save to**, pick a folder. By default the result goes next to the original.
+4. Click **Convert**. Each file shows a progress bar, then **done - show** (click to open its folder).
+
+Hover over **failed** to see the reason. **Stop** cancels the current file and deletes its partial output.
+The window always uses the default quality settings; the options in [section 6](#6-all-options) are command-line only.
+
+### The command line
 
 ```powershell
 avi2mp4 video.avi                          # -> video.mp4
@@ -463,19 +490,21 @@ Use a lower CRF, e.g. `-c 17 -y` (or `-c 24` for WebM).
 
 ```
 avi2mp4/
-├── Cargo.toml      Project definition (no external crates)
+├── Cargo.toml      Project definition (eframe for the window, rfd for file dialogs)
 ├── README.md       This guide
 └── src/
-    └── main.rs     The whole program
+    ├── main.rs     Command line: help text and option parsing; opens the window when run without arguments
+    ├── gui.rs      The window
+    └── convert.rs  Formats, codec choices and running ffmpeg (shared by both)
 ```
 
-Useful places in [src/main.rs](src/main.rs) if you want to change behaviour:
+Useful places in [src/convert.rs](src/convert.rs) if you want to change behaviour:
 
 | To change | Edit |
 |---|---|
 | Which codecs are copied for each format | `Format::copies_video` / `Format::copies_audio` |
 | Audio encoders and their settings | `Format::audio_encoder` |
-| Default CRF, preset, bitrate | `parse_args()` and `convert()` |
+| Default CRF, preset, bitrate | `Options::default()` and `convert()` |
 | GIF defaults (12 fps, 480 px) | The `Format::Gif` branch in `convert()` |
 | Extensions picked up from folders | `INPUT_EXTS` |
 | Add a new output format | Add it to the `Format` enum and `FORMATS`, then update `is_audio`, `copies_video`, `copies_audio`, `video_encoder`, `audio_encoder`, and the video branch of `convert()` |
@@ -489,6 +518,7 @@ After editing, run `cargo build --release` again (and `cargo install --path .` i
 ```powershell
 cargo uninstall avi2mp4                 # only if you used `cargo install`
 winget uninstall --id Gyan.FFmpeg
+scoop uninstall mingw
 rustup self uninstall
 ```
 

@@ -2,9 +2,11 @@
 name = "avi2mp4"
 version = "0.1.0"
 edition = "2021"
-description = "Convert AVI files to MP4 (remux when possible, re-encode otherwise) using ffmpeg"
+description = "Convert video and audio files between formats with ffmpeg (CLI and simple GUI)"
 
 [dependencies]
+eframe = { version = "0.36.2", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+rfd = "0.17.2"
 
 [profile.release]
 opt-level = 3
